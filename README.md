@@ -7,6 +7,12 @@ integration.
 The API is the shared **Pon Connected** backend (also used by Gazelle and other
 Pon brands); the `Manufacturer-Id: UA` header selects Urban Arrow.
 
+## Installation
+
+```bash
+pip install urban-arrow-api
+```
+
 ## Quick start
 
 ```bash
@@ -18,8 +24,11 @@ uv run urban-arrow raw GET v9/bikes
 ```
 
 ```python
+from urban_arrow_api import TokenAuth, UrbanArrowClient, login_with_credentials
+
 async with aiohttp.ClientSession() as session:
-    client = UrbanArrowClient(session, token, on_token_update=save_token)
+    token = await login_with_credentials("you@example.com", "password", session=session)
+    client = UrbanArrowClient(TokenAuth(session, token, on_token_update=save_token))
     for summary in await client.get_bikes():
         telemetry = await client.get_telemetry(summary.id)
         print(telemetry.battery_charge, telemetry.location)
@@ -53,9 +62,14 @@ pages. If Auth0 starts showing a captcha or asks for MFA, it raises
 `browser-login`) stays available as a fallback: log in in a browser and paste
 the `urbanarrow://...?code=...` URL back.
 
-After login the refresh token (`offline_access`) keeps the session alive;
-`on_token_update` is called on each refresh so the new token can be persisted
-(Auth0 may rotate refresh tokens).
+After login the refresh token (`offline_access`) keeps the session alive.
+`UrbanArrowClient` never handles tokens itself: it asks an `AbstractAuth` for
+one via `async_get_access_token()`. `TokenAuth` is the ready-made
+implementation; it refreshes through Auth0 and calls `on_token_update` so the
+new token can be persisted (Auth0 may rotate refresh tokens). Override
+`TokenAuth.async_refresh_token` to add a fallback such as a fresh login.
+`Token.as_dict()` / `Token.from_dict()` give a JSON-serialisable form for
+storage.
 
 For Home Assistant: the config flow asks for email + password, and the
 integration stores the token. It also stores the credentials, so if the refresh
@@ -121,3 +135,19 @@ dealers (`v3/dealers/...`), FAQ (`v4/faq`, `v3/faq/{id}`), route planning
 
 - Whether the refresh token rotates, and how long it lives.
 - How often telemetry updates while the bike is parked or asleep.
+
+## Development and releases
+
+```bash
+uv sync
+uv run ruff check . && uv run ruff format --check . && uv run pytest
+```
+
+Releases are published to PyPI by `.github/workflows/release.yaml` when a
+GitHub release is published. The tag (`v0.1.0` or `0.1.0`) must match
+`version` in `pyproject.toml`. PyPI trusted publishing has to be configured once
+for the `pypi` environment of this repository.
+
+## License
+
+MIT
