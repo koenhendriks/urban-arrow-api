@@ -8,6 +8,7 @@ from aiohttp.test_utils import TestServer
 from urban_arrow_api import (
     BikeSetting,
     Token,
+    TokenAuth,
     UrbanArrowAuthError,
     UrbanArrowClient,
     create_login_request,
@@ -69,7 +70,7 @@ async def test_telemetry_parsing_and_headers(backend):
         ),
     )
     async with aiohttp.ClientSession() as session:
-        t = await UrbanArrowClient(session, _token()).get_telemetry(BIKE)
+        t = await UrbanArrowClient(TokenAuth(session, _token())).get_telemetry(BIKE)
 
     headers = backend.requests[0].headers
     assert t.battery_charge.value == 81
@@ -91,12 +92,12 @@ async def test_expired_token_is_refreshed_and_reported(backend):
     backend.add("PUT", f"/api/v2/bikes/{BIKE}/settings/AUTO_PROTECTION/enable", web.Response(status=204))
     updates = []
     async with aiohttp.ClientSession() as session:
-        client = UrbanArrowClient(session, _token(-1), on_token_update=updates.append)
-        await client.set_setting(BIKE, BikeSetting.AUTO_PROTECTION, True)
+        auth = TokenAuth(session, _token(-1), updates.append)
+        await UrbanArrowClient(auth).set_setting(BIKE, BikeSetting.AUTO_PROTECTION, True)
 
-    assert client.token.access_token == "new"
-    assert client.token.refresh_token == "r2"
-    assert updates == [client.token]
+    assert auth.token.access_token == "new"
+    assert auth.token.refresh_token == "r2"
+    assert updates == [auth.token]
     assert backend.requests[1].headers["Authorization"] == "Bearer new"
 
 
@@ -106,18 +107,18 @@ async def test_401_triggers_single_refresh_then_retry(backend):
     backend.add("POST", path, web.Response(status=200))
     backend.add("POST", "/oauth/token", web.json_response({"access_token": "new", "expires_in": 600}))
     async with aiohttp.ClientSession() as session:
-        client = UrbanArrowClient(session, _token())
-        await client.flash_lights(BIKE)
+        auth = TokenAuth(session, _token())
+        await UrbanArrowClient(auth).flash_lights(BIKE)
 
     assert [r.path for r in backend.requests] == [path, "/oauth/token", path]
-    assert client.token.refresh_token == "refresh"
+    assert auth.token.refresh_token == "refresh"
 
 
 async def test_revoked_refresh_token_raises_auth_error(backend):
     backend.add("POST", "/oauth/token", web.json_response({"error": "invalid_grant"}, status=403))
     async with aiohttp.ClientSession() as session:
         with pytest.raises(UrbanArrowAuthError):
-            await UrbanArrowClient(session, _token(-1)).get_bikes()
+            await UrbanArrowClient(TokenAuth(session, _token(-1))).get_bikes()
 
 
 def test_extract_code():
@@ -131,3 +132,17 @@ def test_extract_code():
     assert extract_code("abc") == "abc"
     with pytest.raises(UrbanArrowAuthError):
         extract_code(url, "other-state")
+
+
+async def test_custom_refresh_fallback_is_used(backend):
+    backend.add("GET", "/api/v9/bikes", web.json_response([]))
+
+    class FallbackAuth(TokenAuth):
+        async def async_refresh_token(self, token: Token) -> Token:
+            return Token("relogin", "r3", time.time() + 600)
+
+    async with aiohttp.ClientSession() as session:
+        auth = FallbackAuth(session, _token(-1))
+        assert await UrbanArrowClient(auth).get_bikes() == []
+
+    assert backend.requests[0].headers["Authorization"] == "Bearer relogin"

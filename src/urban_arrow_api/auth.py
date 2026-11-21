@@ -9,10 +9,13 @@ token keeps the session alive without user interaction.
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
+import inspect
 import secrets
 import time
+from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
 from dataclasses import asdict, dataclass
 from typing import Any
@@ -166,3 +169,55 @@ async def refresh_token(session: aiohttp.ClientSession, token: Token) -> Token:
 
 
 TokenUpdateCallback = Callable[[Token], Awaitable[None] | None]
+
+
+class AbstractAuth(ABC):
+    """Supplies access tokens to the client.
+
+    The client never stores or refreshes tokens itself; subclass this to control
+    where tokens live and how they are renewed (e.g. persisted in a config entry).
+    """
+
+    def __init__(self, session: aiohttp.ClientSession) -> None:
+        self.session = session
+
+    @abstractmethod
+    async def async_get_access_token(self, *, force_refresh: bool = False) -> str:
+        """Return a valid access token; ``force_refresh`` is set after a 401."""
+
+
+class TokenAuth(AbstractAuth):
+    """Holds a ``Token`` and refreshes it through Auth0 when it expires.
+
+    ``on_token_update`` fires after every refresh; persist the token there,
+    because Auth0 may rotate the refresh token and invalidate the old one.
+    """
+
+    def __init__(
+        self,
+        session: aiohttp.ClientSession,
+        token: Token,
+        on_token_update: TokenUpdateCallback | None = None,
+    ) -> None:
+        super().__init__(session)
+        self._token = token
+        self._on_token_update = on_token_update
+        self._lock = asyncio.Lock()
+
+    @property
+    def token(self) -> Token:
+        return self._token
+
+    async def async_refresh_token(self, token: Token) -> Token:
+        """Override to add a fallback, e.g. a fresh login when the refresh token is revoked."""
+        return await refresh_token(self.session, token)
+
+    async def async_get_access_token(self, *, force_refresh: bool = False) -> str:
+        async with self._lock:
+            if force_refresh or self._token.expired:
+                self._token = await self.async_refresh_token(self._token)
+                if self._on_token_update:
+                    result = self._on_token_update(self._token)
+                    if inspect.isawaitable(result):
+                        await result
+            return self._token.access_token

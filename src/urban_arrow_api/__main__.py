@@ -13,7 +13,7 @@ from typing import Any
 
 import aiohttp
 
-from . import ActivityPeriod, BikeSetting, Token, UrbanArrowClient
+from . import ActivityPeriod, BikeSetting, Token, TokenAuth, UrbanArrowClient
 from .auth import create_login_request, exchange_code, extract_code
 from .login import login_with_credentials
 
@@ -54,7 +54,7 @@ async def _browser_login() -> None:
 async def _run(args: argparse.Namespace) -> None:
     token = Token.from_dict(json.loads(TOKEN_FILE.read_text()))
     async with aiohttp.ClientSession() as session:
-        client = UrbanArrowClient(session, token, on_token_update=_save)
+        client = UrbanArrowClient(TokenAuth(session, token, _save))
         match args.command:
             case "bikes":
                 _dump([b.raw for b in await client.get_bikes()])

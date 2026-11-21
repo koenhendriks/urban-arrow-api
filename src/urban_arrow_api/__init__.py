@@ -1,4 +1,4 @@
-from .auth import LoginRequest, Token, create_login_request, exchange_code, extract_code
+from .auth import AbstractAuth, LoginRequest, Token, TokenAuth, create_login_request, exchange_code, extract_code
 from .client import UrbanArrowClient
 from .const import ActivityPeriod, BikeSetting
 from .exceptions import (
@@ -13,6 +13,7 @@ from .login import login_with_credentials
 from .models import Activity, Bike, BikeSummary, Location, Notification, Telemetry, TimedValue
 
 __all__ = [
+    "AbstractAuth",
     "Activity",
     "ActivityPeriod",
     "Bike",
@@ -24,6 +25,7 @@ __all__ = [
     "Telemetry",
     "TimedValue",
     "Token",
+    "TokenAuth",
     "UrbanArrowApiError",
     "UrbanArrowAuthError",
     "UrbanArrowCaptchaRequired",

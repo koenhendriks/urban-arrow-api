@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import asyncio
-import inspect
 from datetime import UTC, date, datetime
 from typing import Any
 
 import aiohttp
 
-from . import auth
-from .auth import Token, TokenUpdateCallback
+from .auth import AbstractAuth
 from .const import (
     API_BASE_URL,
     CLIENT_TYPE,
@@ -28,41 +25,12 @@ DEFAULT_TIMEOUT = aiohttp.ClientTimeout(total=15)
 
 
 class UrbanArrowClient:
-    """Async client for the Pon Connected API as used by the Urban Arrow app.
+    """Async client for the Pon Connected API as used by the Urban Arrow app."""
 
-    The session is borrowed, not owned, so Home Assistant can pass its shared one.
-    ``on_token_update`` fires whenever the token is refreshed; persist it there,
-    because Auth0 may rotate the refresh token and invalidate the old one.
-    """
-
-    def __init__(
-        self,
-        session: aiohttp.ClientSession,
-        token: Token,
-        *,
-        on_token_update: TokenUpdateCallback | None = None,
-        language: str = "en",
-    ) -> None:
-        self._session = session
-        self._token = token
-        self._on_token_update = on_token_update
+    def __init__(self, auth: AbstractAuth, *, language: str = "en") -> None:
+        self._auth = auth
+        self._session = auth.session
         self._language = language
-        self._refresh_lock = asyncio.Lock()
-
-    @property
-    def token(self) -> Token:
-        return self._token
-
-    async def _ensure_token(self, *, force: bool = False) -> str:
-        async with self._refresh_lock:
-            if force or self._token.expired:
-                stale = self._token
-                self._token = await auth.refresh_token(self._session, stale)
-                if self._on_token_update:
-                    result = self._on_token_update(self._token)
-                    if inspect.isawaitable(result):
-                        await result
-        return self._token.access_token
 
     async def _request(
         self,
@@ -73,7 +41,7 @@ class UrbanArrowClient:
         json: Any = None,
         _retry: bool = True,
     ) -> Any:
-        access_token = await self._ensure_token()
+        access_token = await self._auth.async_get_access_token()
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Manufacturer-Id": MANUFACTURER_ID,
@@ -91,7 +59,7 @@ class UrbanArrowClient:
                 timeout=DEFAULT_TIMEOUT,
             ) as resp:
                 if resp.status == 401 and _retry:
-                    await self._ensure_token(force=True)
+                    await self._auth.async_get_access_token(force_refresh=True)
                     return await self._request(
                         method, path, params=params, json=json, _retry=False
                     )
