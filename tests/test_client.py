@@ -5,7 +5,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestServer
 
-from urban_arrow import (
+from urban_arrow_api import (
     BikeSetting,
     Token,
     UrbanArrowAuthError,
@@ -39,8 +39,8 @@ async def backend(monkeypatch):
     server = TestServer(app)
     await server.start_server()
     base = str(server.make_url("/"))
-    monkeypatch.setattr("urban_arrow.client.API_BASE_URL", base + "api/")
-    monkeypatch.setattr("urban_arrow.auth.TOKEN_URL", base + "oauth/token")
+    monkeypatch.setattr("urban_arrow_api.client.API_BASE_URL", base + "api/")
+    monkeypatch.setattr("urban_arrow_api.auth.TOKEN_URL", base + "oauth/token")
     yield fake
     await server.close()
 

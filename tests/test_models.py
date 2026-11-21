@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from urban_arrow import Bike, Telemetry
+from urban_arrow_api import Bike, Telemetry
 
 FIXTURES = Path(__file__).parent / "fixtures"
 

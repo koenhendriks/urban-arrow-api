@@ -2,12 +2,12 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestServer
 
-from urban_arrow import (
+from urban_arrow_api import (
     UrbanArrowAuthError,
     UrbanArrowCaptchaRequired,
     login_with_credentials,
 )
-from urban_arrow.const import AUTH0_REDIRECT_URI
+from urban_arrow_api.const import AUTH0_REDIRECT_URI
 
 PASSWORD = "hunter2"
 
@@ -62,8 +62,8 @@ async def auth0(monkeypatch):
     server = TestServer(app)
     await server.start_server()
     base = str(server.make_url("")).rstrip("/")
-    monkeypatch.setattr("urban_arrow.auth.AUTHORIZE_URL", base + "/authorize")
-    monkeypatch.setattr("urban_arrow.auth.TOKEN_URL", base + "/oauth/token")
+    monkeypatch.setattr("urban_arrow_api.auth.AUTHORIZE_URL", base + "/authorize")
+    monkeypatch.setattr("urban_arrow_api.auth.TOKEN_URL", base + "/oauth/token")
     yield calls
     await server.close()
 
