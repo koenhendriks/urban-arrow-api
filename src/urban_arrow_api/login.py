@@ -113,7 +113,12 @@ async def login_with_credentials(
                 state = _form_state(page)
                 resp = await form_session.post(
                     url,
-                    data={"state": state, "username": username, "action": "default", **BROWSER_HINTS},
+                    data={
+                        "state": state,
+                        "username": username,
+                        "action": "default",
+                        **BROWSER_HINTS,
+                    },
                     allow_redirects=False,
                 )
                 callback, url, page = await _follow(form_session, resp)

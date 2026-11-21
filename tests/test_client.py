@@ -62,7 +62,10 @@ async def test_telemetry_parsing_and_headers(backend):
                     "charge": {"value": 81, "lastUpdatedOn": ts},
                     "isCharging": {"value": False, "lastUpdatedOn": ts},
                 },
-                "coordinate": {"value": {"latitude": 52.37, "longitude": 4.89}, "lastUpdatedOn": ts},
+                "coordinate": {
+                    "value": {"latitude": 52.37, "longitude": 4.89},
+                    "lastUpdatedOn": ts,
+                },
                 "moduleCharge": None,
                 "odometer": {"value": 1234.5, "lastUpdatedOn": ts},
                 "range": {"value": 40, "lastUpdatedOn": ts},
@@ -89,7 +92,9 @@ async def test_expired_token_is_refreshed_and_reported(backend):
         "/oauth/token",
         web.json_response({"access_token": "new", "expires_in": 600, "refresh_token": "r2"}),
     )
-    backend.add("PUT", f"/api/v2/bikes/{BIKE}/settings/AUTO_PROTECTION/enable", web.Response(status=204))
+    backend.add(
+        "PUT", f"/api/v2/bikes/{BIKE}/settings/AUTO_PROTECTION/enable", web.Response(status=204)
+    )
     updates = []
     async with aiohttp.ClientSession() as session:
         auth = TokenAuth(session, _token(-1), updates.append)
@@ -105,7 +110,9 @@ async def test_401_triggers_single_refresh_then_retry(backend):
     path = f"/api/v1/bikes/{BIKE}/flash-lights"
     backend.add("POST", path, web.Response(status=401))
     backend.add("POST", path, web.Response(status=200))
-    backend.add("POST", "/oauth/token", web.json_response({"access_token": "new", "expires_in": 600}))
+    backend.add(
+        "POST", "/oauth/token", web.json_response({"access_token": "new", "expires_in": 600})
+    )
     async with aiohttp.ClientSession() as session:
         auth = TokenAuth(session, _token())
         await UrbanArrowClient(auth).flash_lights(BIKE)

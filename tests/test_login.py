@@ -41,7 +41,9 @@ async def auth0(monkeypatch):
             return web.Response(text=_form(), content_type="text/html")
         form = await request.post()
         if form["password"] != PASSWORD:
-            return web.Response(status=400, text=_form(error="Wrong email or password"), content_type="text/html")
+            return web.Response(
+                status=400, text=_form(error="Wrong email or password"), content_type="text/html"
+            )
         raise web.HTTPFound("/authorize/resume?state=s1")
 
     async def resume(request):
@@ -80,6 +82,8 @@ async def test_wrong_password_surfaces_auth0_message(auth0):
 
 
 async def test_captcha_widget_is_detected(auth0):
-    auth0["identifier_page"] = _form('<div data-captcha-sitekey="abc" data-captcha-provider="auth0"></div>')
+    auth0["identifier_page"] = _form(
+        '<div data-captcha-sitekey="abc" data-captcha-provider="auth0"></div>'
+    )
     with pytest.raises(UrbanArrowCaptchaRequired):
         await login_with_credentials("me@example.com", PASSWORD)

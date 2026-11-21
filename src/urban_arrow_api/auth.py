@@ -102,9 +102,7 @@ def extract_code(redirect: str, expected_state: str | None = None) -> str:
         return redirect
     query = parse_qs(urlparse(redirect).query)
     if "error" in query:
-        raise UrbanArrowAuthError(
-            query.get("error_description", query["error"])[0]
-        )
+        raise UrbanArrowAuthError(query.get("error_description", query["error"])[0])
     if expected_state is not None and query.get("state", [None])[0] != expected_state:
         raise UrbanArrowAuthError("State mismatch in redirect URL")
     try:
@@ -140,9 +138,7 @@ def _token_from_response(data: dict[str, Any], previous_refresh: str | None = No
     )
 
 
-async def exchange_code(
-    session: aiohttp.ClientSession, code: str, code_verifier: str
-) -> Token:
+async def exchange_code(session: aiohttp.ClientSession, code: str, code_verifier: str) -> Token:
     data = await _token_request(
         session,
         {

@@ -17,7 +17,9 @@ from . import ActivityPeriod, BikeSetting, Token, TokenAuth, UrbanArrowClient
 from .auth import create_login_request, exchange_code, extract_code
 from .login import login_with_credentials
 
-TOKEN_FILE = Path(os.environ.get("URBAN_ARROW_TOKEN_FILE", "~/.config/urban-arrow/token.json")).expanduser()
+TOKEN_FILE = Path(
+    os.environ.get("URBAN_ARROW_TOKEN_FILE", "~/.config/urban-arrow/token.json")
+).expanduser()
 
 
 def _save(token: Token) -> None:
@@ -31,7 +33,9 @@ def _dump(data: Any) -> None:
 
 
 async def _password_login(username: str) -> None:
-    password = os.environ.get("URBAN_ARROW_PASSWORD") or getpass.getpass("Password: ")
+    password = os.environ.get("URBAN_ARROW_PASSWORD") or await asyncio.to_thread(
+        getpass.getpass, "Password: "
+    )
     _save(await login_with_credentials(username, password))
     print(f"Saved token to {TOKEN_FILE}")
 
@@ -42,9 +46,10 @@ async def _browser_login() -> None:
     print(req.url)
     print(
         "\n2. After login the browser tries to open an 'urbanarrow://...' URL and fails."
-        "\n   Copy that URL (DevTools > Network, or the address bar / error page) and paste it here."
+        "\n   Copy that URL (DevTools > Network, or the address bar / error page)"
+        " and paste it here."
     )
-    redirect = input("\nRedirect URL or code: ")
+    redirect = await asyncio.to_thread(input, "\nRedirect URL or code: ")
     async with aiohttp.ClientSession() as session:
         token = await exchange_code(session, extract_code(redirect, req.state), req.code_verifier)
     _save(token)
@@ -66,7 +71,9 @@ async def _run(args: argparse.Namespace) -> None:
                     _dump((await client.get_telemetry(bike.id)).raw)
             case "activity":
                 bike = await client.get_bike(args.bike_id)
-                start = date.fromisoformat(args.start) if args.start else date.today().replace(day=1)
+                start = (
+                    date.fromisoformat(args.start) if args.start else date.today().replace(day=1)
+                )
                 _dump((await client.get_activity(bike, ActivityPeriod(args.period), start)).raw)
             case "notifications":
                 _dump([n.raw for n in await client.get_notifications()])
@@ -74,7 +81,9 @@ async def _run(args: argparse.Namespace) -> None:
                 await client.flash_lights(args.bike_id)
                 print("ok")
             case "setting":
-                await client.set_setting(args.bike_id, BikeSetting(args.setting), args.state == "on")
+                await client.set_setting(
+                    args.bike_id, BikeSetting(args.setting), args.state == "on"
+                )
                 print("ok")
             case "raw":
                 _dump(await client._request(args.method.upper(), args.path))

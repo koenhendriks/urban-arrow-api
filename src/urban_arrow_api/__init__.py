@@ -1,4 +1,12 @@
-from .auth import AbstractAuth, LoginRequest, Token, TokenAuth, create_login_request, exchange_code, extract_code
+from .auth import (
+    AbstractAuth,
+    LoginRequest,
+    Token,
+    TokenAuth,
+    create_login_request,
+    exchange_code,
+    extract_code,
+)
 from .client import UrbanArrowClient
 from .const import ActivityPeriod, BikeSetting
 from .exceptions import (

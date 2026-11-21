@@ -60,9 +60,7 @@ class UrbanArrowClient:
             ) as resp:
                 if resp.status == 401 and _retry:
                     await self._auth.async_get_access_token(force_refresh=True)
-                    return await self._request(
-                        method, path, params=params, json=json, _retry=False
-                    )
+                    return await self._request(method, path, params=params, json=json, _retry=False)
                 if resp.status == 401:
                     raise UrbanArrowAuthError("Access token rejected")
                 if resp.status >= 400:
