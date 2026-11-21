@@ -1,0 +1,34 @@
+{
+  "id": "00000000-0000-0000-0000-000000000001",
+  "details": {
+    "activationCode": "000000000000",
+    "bluetooth": null,
+    "category": "Bakfiets",
+    "model": "Family Active Line Plus",
+    "nickname": "Test Arrow",
+    "pairedOn": 1704283784963,
+    "productionProfileId": "a251165b-54a1-4665-9176-8f7165e40f9b",
+    "protectionLevel": "MOTION_SENSOR",
+    "system": "BES2",
+    "frameNumber": "0000000TEST",
+    "isSmart": true
+  },
+  "module": {
+    "id": "0000000000000000",
+    "autoChargeEnabled": true,
+    "canDataSupported": true,
+    "protectionEnabled": true,
+    "autoProtectionEnabled": true,
+    "lastOnline": 1795507521000,
+    "supportsTelemetryOverBle": true,
+    "firmware": {"branch": "257", "upgradedOn": 1793879447905, "version": "260828"}
+  },
+  "dataSubscription": {"startDate": 1704283784000, "endDate": 1830514184000, "state": "ACTIVE", "canWithdrawUntil": null},
+  "dataSubscriptionOffer": null,
+  "insurance": {
+    "gracePeriodUntil": null, "checkStatus": "NOT_SUPPORTED", "endDate": null, "insurer": "enra",
+    "policeReportNumber": null, "policyNumber": null, "theftState": "NONE"
+  },
+  "insuranceOffer": null,
+  "notifications": {"batteryFull": true, "batteryLow": true, "moduleBatteryLow": false, "protectionActivated": false}
+}

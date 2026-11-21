@@ -1,0 +1,11 @@
+{
+  "assistLevel": {"value": 4, "lastUpdatedOn": 1795507676000},
+  "battery": {
+    "charge": {"value": 72, "lastUpdatedOn": 1795435937000},
+    "isCharging": {"value": false, "lastUpdatedOn": 1794576609000}
+  },
+  "coordinate": {"value": {"latitude": 52.0, "longitude": 5.0}, "lastUpdatedOn": 1795435977000},
+  "moduleCharge": {"value": 22, "lastUpdatedOn": 1795507676000},
+  "odometer": {"value": 1705.04, "lastUpdatedOn": 1795435997000},
+  "range": {"value": 26.0, "lastUpdatedOn": 1795507676000}
+}
